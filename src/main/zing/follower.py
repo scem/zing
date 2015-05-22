@@ -4,6 +4,7 @@ Created on May 21, 2015
 @author: scem
 '''
 
+from thread import start_new_thread
 import zmq
 
 ONLINE = 'online'
@@ -18,29 +19,33 @@ class Follower(object):
         self.socket = zmq.Context().socket(zmq.SUB)
         self.socket.connect('tcp://%s:%s' % (host, port))
         self.me = me
+        self._last = None
+        self._status = OFFLINE
         
-    def follow(self, message):
-        self.status = ONLINE
+    def follow(self):
+        self._status = ONLINE
         try:
-            self.thread = start_new_thread(self._run())
+            self.thread = start_new_thread(self._run, ())
         except:
-            self.satus = OFFLINE
+            self._status = OFFLINE
             raise
         
     def status(self):
-        return self.status
+        return self._status
+
+    def last(self):
+        return self._last
 
     def stop(self):
-        self.thread.exit()
-        self.status = OFFLINE
+        self._status = OFFLINE
     
     def _run(self):
-        if self.status == ONLINE: return
-        self.status = ONLINE
-        while self.status == ONLINE:
+        if self._status == ONLINE: return
+        self._status = ONLINE
+        while self._status == ONLINE:
             msg = self.socket.recv()
             self.publish(msg)
-            self.last = msg
+            self._last = msg
     
     def publish(msg):
         print msg

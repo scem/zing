@@ -13,8 +13,9 @@ class Test(unittest.TestCase):
     def testZinger(self):
         zinger = Zinger()
         zinger.zing("hi! it's me")
+        zinger.zing("hi! me again")
 
-    def testFollower(self):
+    def ntestFollower(self):
         follower = Follower()
         assert(follower.status() is Follower.OFFLINE)
         follower.follow()
@@ -25,19 +26,19 @@ class Test(unittest.TestCase):
     def testNewsRoom(self):
         newsroom = NewsRoom()
         assert(newsroom.status() is NewsRoom.CLOSED)
-        newsroom.open()
+        newsroom.start()
         assert(newsroom.status() is NewsRoom.OPEN)
         newsroom.close()
-        assert(newsroom.status() is NewsRoom.CLOSED)
+        assert newsroom.status() is NewsRoom.CLOSED , newsroom.status() 
     
-    def testAllTogetherNow(self):
+    def ntestAllTogetherNow(self):
         newsroom = NewsRoom()
-        newsroom.open()
+        newsroom.run()
         follower = Follower()
         follower.follow()
         zinger = Zinger()
         zinger.zing('1')
-        assert('1' == follower.last())
+        assert('anonymous:1' == follower.last())
         newsroom.close()
         assert(newsroom.BYE == follower.last())
         follower.stop()
