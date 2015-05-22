@@ -5,8 +5,6 @@ Created on May 21, 2015
 '''
 
 import zmq
-ct = zmq.Context()
-
 
 class Zinger(object):
     '''
@@ -20,3 +18,6 @@ class Zinger(object):
         
     def zing(self, message):
         self.socket.send("%s:%s" (self.me, message))
+        
+    def __exit__(self):
+        self.socket.disconnect()
