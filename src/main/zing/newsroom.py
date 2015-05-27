@@ -25,27 +25,30 @@ class NewsRoom(Thread):
     
     def status(self):
         return self._status
-
+    
+    BYE = 'bye'
     def close(self):
         self._status = CLOSED
-        Zinger(me='',port=self.inport).zing('')
+        Zinger(me='',port=self.inport).zing(self.BYE)
     
     def run(self):
-        self.context = zmq.Context()
-        self.incoming = self.context.socket(zmq.PULL)
-        self.incoming.setsockopt(zmq.RCVBUF, 0)
-        self.incoming.bind('tcp://*:7001')
+        context = zmq.Context()
+        incoming = context.socket(zmq.PULL)
+        incoming.setsockopt(zmq.RCVBUF, 0)
+        incoming.bind('tcp://*:7001')
         
-        self.outgoing = self.context.socket(zmq.PUB)
-        self.outgoing.bind('tcp://*:7002')
-        
+        outgoing = context.socket(zmq.PUB)
+        outgoing.bind('tcp://*:7002')
+                
         self._status = OPEN
         while self._status == OPEN:
-            msg = self.incoming.recv()
-            self.outgoing.send(msg)
-        
-        self.incoming.close()
-        self.outgoing.close()
-        self.context.term()
+            msg = incoming.recv()
+            print 'news '+msg
+            outgoing.send(msg)
+            print 'sent'
+        print 'done'
+        incoming.close()
+        outgoing.close()
+        context.term()
 
     

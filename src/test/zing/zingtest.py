@@ -6,6 +6,7 @@ Created on May 21, 2015
 import unittest
 
 from zing import NewsRoom, Zinger, Follower
+from time import time, sleep
 
 class Test(unittest.TestCase):
 
@@ -15,33 +16,69 @@ class Test(unittest.TestCase):
         zinger.zing("hi! it's me")
         zinger.zing("hi! me again")
 
-    def ntestFollower(self):
-        follower = Follower()
+    def testFollower(self):
+        follower = Follower(timeout=100)
         assert(follower.status() is Follower.OFFLINE)
-        follower.follow()
-        assert(follower.status() is Follower.ONLINE)
+        follower.start()
+        now = time()
+        while not follower.status() is Follower.ONLINE:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
+        sleep(0.5)
         follower.stop()
-        assert(follower.status() is Follower.OFFLINE)
+        now = time()
+        while not follower.status() is Follower.OFFLINE:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
 
     def testNewsRoom(self):
         newsroom = NewsRoom()
         assert(newsroom.status() is NewsRoom.CLOSED)
         newsroom.start()
-        assert(newsroom.status() is NewsRoom.OPEN)
+        now = time()
+        while not newsroom.status() is NewsRoom.OPEN:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
         newsroom.close()
-        assert newsroom.status() is NewsRoom.CLOSED , newsroom.status() 
+        now = time()
+        while not newsroom.status() is NewsRoom.CLOSED:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
     
-    def ntestAllTogetherNow(self):
+    def testAllTogetherNow(self):
         newsroom = NewsRoom()
-        newsroom.run()
-        follower = Follower()
-        follower.follow()
+        newsroom.start()
+        now = time()
+        while not newsroom.status() is NewsRoom.OPEN:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
+        
+        follower = Follower(timeout=1000)
+        follower.start()
+        now = time()
+        while not follower.status() is Follower.ONLINE:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
+        
         zinger = Zinger()
         zinger.zing('1')
-        assert('anonymous:1' == follower.last())
+        now = time()
+        while 'anonymous:1' != follower.last():
+            if time()-now > 10: 
+                raise Exception('timeout (%s)' % follower.last())
+            sleep(0.05)
+            
         newsroom.close()
-        assert(newsroom.BYE == follower.last())
+        now = time()
+        while not newsroom.status() is NewsRoom.CLOSED:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
+        
         follower.stop()
+        now = time()
+        while not follower.status() is Follower.OFFLINE:
+            if time()-now > 1: raise Exception('timeout')
+            sleep(0.05)
         
 
 if __name__ == "__main__":

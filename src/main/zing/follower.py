@@ -4,31 +4,25 @@ Created on May 21, 2015
 @author: scem
 '''
 
-from thread import start_new_thread
+from threading import Thread
 import zmq
 
 ONLINE = 'online'
 OFFLINE = 'offline'
 
-class Follower(object):
+class Follower(Thread):
     '''
     classdocs
     '''
     
-    def __init__(self, me='anonymous', host='localhost', port='7002'):
-        self.socket = zmq.Context().socket(zmq.SUB)
-        self.socket.connect('tcp://%s:%s' % (host, port))
+    def __init__(self, me='anonymous', host='localhost', port='7002', timeout=None):
         self.me = me
+        self.host = host
+        self.port = port
+        self.timeout = timeout
         self._last = None
         self._status = OFFLINE
-        
-    def follow(self):
-        self._status = ONLINE
-        try:
-            self.thread = start_new_thread(self._run, ())
-        except:
-            self._status = OFFLINE
-            raise
+        Thread.__init__(self)
         
     def status(self):
         return self._status
@@ -39,17 +33,28 @@ class Follower(object):
     def stop(self):
         self._status = OFFLINE
     
-    def _run(self):
-        if self._status == ONLINE: return
+    def run(self):
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.setsockopt(zmq.RCVBUF, 0)
+        socket.setsockopt(zmq.SUBSCRIBE, self.me)
+
+        socket.connect('tcp://%s:%s' % (self.host, self.port))
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
+        
         self._status = ONLINE
         while self._status == ONLINE:
-            msg = self.socket.recv()
-            self.publish(msg)
-            self._last = msg
+            print self._status
+            socks = dict(poller.poll(self.timeout))
+            if socket in socks and socks[socket] == zmq.POLLIN:
+                print 'x'
+                self._last = socket.recv()
+                print 'y'
+                self.publish(self._last)
+        print self._status
+        socket.close()
+        context.term()
     
-    def publish(msg):
+    def publish(self,msg):
         print msg
-    
-    def __exit__(self):
-        self.socket.disconnect()
-
