@@ -43,10 +43,7 @@ class NewsRoom(Thread):
         self._status = OPEN
         while self._status == OPEN:
             msg = incoming.recv()
-            print 'news '+msg
             outgoing.send(msg)
-            print 'sent'
-        print 'done'
         incoming.close()
         outgoing.close()
         context.term()

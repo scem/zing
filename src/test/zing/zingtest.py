@@ -9,15 +9,14 @@ from zing import NewsRoom, Zinger, Follower
 from time import time, sleep
 
 class Test(unittest.TestCase):
-
-
+    
     def testZinger(self):
-        zinger = Zinger()
+        zinger = Zinger(linger=50)
         zinger.zing("hi! it's me")
         zinger.zing("hi! me again")
 
     def testFollower(self):
-        follower = Follower(timeout=100)
+        follower = Follower(timeout=1000)
         assert(follower.status() is Follower.OFFLINE)
         follower.start()
         now = time()
@@ -46,6 +45,10 @@ class Test(unittest.TestCase):
             sleep(0.05)
     
     def testAllTogetherNow(self):
+        zinger = Zinger()
+        for x in range(3,0,-1):
+            zinger.zing(str(x))
+        
         newsroom = NewsRoom()
         newsroom.start()
         now = time()
@@ -60,14 +63,12 @@ class Test(unittest.TestCase):
             if time()-now > 1: raise Exception('timeout')
             sleep(0.05)
         
-        zinger = Zinger()
-        zinger.zing('1')
         now = time()
         while 'anonymous:1' != follower.last():
             if time()-now > 10: 
                 raise Exception('timeout (%s)' % follower.last())
             sleep(0.05)
-            
+        
         newsroom.close()
         now = time()
         while not newsroom.status() is NewsRoom.CLOSED:
@@ -79,7 +80,7 @@ class Test(unittest.TestCase):
         while not follower.status() is Follower.OFFLINE:
             if time()-now > 1: raise Exception('timeout')
             sleep(0.05)
-        
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
